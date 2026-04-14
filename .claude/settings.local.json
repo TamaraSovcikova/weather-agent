@@ -1,0 +1,12 @@
+
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "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",
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "nousresearch/hermes-3-llama-3.1-405b:free",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "nousresearch/hermes-3-llama-3.1-405b:free",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "nousresearch/hermes-3-llama-3.1-405b:free"
+  }
+}
+
+
