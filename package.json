@@ -1,0 +1,33 @@
+{
+  "name": "weather-agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "ask": "npx ts-node src/demos/ask-agent.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TamaraSovcikova/weather-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/TamaraSovcikova/weather-agent/issues"
+  },
+  "homepage": "https://github.com/TamaraSovcikova/weather-agent#readme",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
+    "ai": "^6.0.160",
+    "dotenv": "^17.4.2",
+    "zod": "^4.3.6"
+  }
+}
