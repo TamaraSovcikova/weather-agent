@@ -3,11 +3,12 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-/**
- * Keep model in code (NOT env)
- * Reason: it's application logic, not a secret
- */
-const MODEL = "openai/gpt-4o-mini";
+const MODELS = [
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openai/gpt-oss-20b:free",
+];
 
 export const AskResponseSchema = z.object({
   shortAnswer: z.string().describe("A concise answer to the question."),
@@ -30,16 +31,62 @@ export const getOpenRouter = () => {
   });
 };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const getErrorMessage = (err: unknown): string => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
+  return String(err);
+};
+
+const isRateLimitError = (err: unknown): boolean => {
+  const message = getErrorMessage(err).toLowerCase();
+  const statusCode = (err as any)?.statusCode;
+
+  return (
+    statusCode === 429 ||
+    message.includes("rate-limited") ||
+    message.includes("rate limit") ||
+    message.includes("too many requests") ||
+    message.includes("temporarily rate-limited")
+  );
+};
+
 export const askAgent = async (question: string): Promise<AskResponse> => {
   const openrouter = getOpenRouter();
 
-  const { object } = await generateObject({
-    model: openrouter(MODEL),
-    schema: AskResponseSchema,
-    prompt: `Answer this question clearly and concisely:\n\n${question}`,
-  });
+  let lastError: unknown;
 
-  return object;
+  for (const model of MODELS) {
+    try {
+      const { object } = await generateObject({
+        model: openrouter(model),
+        schema: AskResponseSchema,
+        prompt: `Answer this question clearly and concisely:\n\n${question}`,
+      });
+
+      return object;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      if (isRateLimitError(err)) {
+        console.log(`Model rate-limited: ${model} - ${message}`);
+      } else {
+        console.log(`Model failed: ${model} - ${message}`);
+      }
+      await sleep(500);
+      lastError = err;
+    }
+  }
+
+  throw lastError;
 };
 
 export const runAskAgentCli = async (): Promise<void> => {
@@ -53,8 +100,23 @@ export const runAskAgentCli = async (): Promise<void> => {
   try {
     const result = await askAgent(question);
     console.log(JSON.stringify(result, null, 2));
-  } catch (err) {
-    console.error("Agent error:", err);
+  } catch (err: any) {
+    const statusCode = err?.statusCode;
+    const message = err?.responseBody || err?.message || "";
+
+    const isRateLimit =
+      statusCode === 429 ||
+      message.includes("rate-limited") ||
+      message.includes("temporarily rate-limited");
+
+    if (isRateLimit) {
+      console.log(
+        "⏳ All models are currently rate-limited. Please try again in a few seconds.",
+      );
+    } else {
+      console.log("❌ AI request failed.");
+    }
+
     process.exit(1);
   }
 };
